@@ -1,6 +1,5 @@
+#include "decouverte.h"
 
-#include<decouverte.h>
-#include "gladiator.h"
 
 enum Direction {
     NORTH,
@@ -34,15 +33,13 @@ void randomwalk(Gladiator *gladiator) {
         gladiator->control->setWheelSpeed(WheelAxis::RIGHT, 0.6); //controle de la roue droite
         gladiator->control->setWheelSpeed(WheelAxis::LEFT, -0.6); //control de la roue gauche
     }
-
-    delay(100);
 }
 inline float moduloPi(float a) // return angle in [-pi; pi]
 {
     return (a < 0.0) ? (std::fmod(a - M_PI, 2*M_PI) + M_PI) : (std::fmod(a + M_PI, 2*M_PI) - M_PI);
 }
 
-inline bool aim(Gladiator* gladiator, const Vector2& target, bool showLogs)
+bool aim(Gladiator* gladiator, const Vector2& target, bool showLogs)
 {
     constexpr float ANGLE_REACHED_THRESHOLD = 0.1;
     constexpr float POS_REACHED_THRESHOLD = 0.05;
@@ -65,14 +62,14 @@ inline bool aim(Gladiator* gladiator, const Vector2& target, bool showLogs)
     } 
     else if (std::abs(angleError) > ANGLE_REACHED_THRESHOLD)
     {
-        float factor = 0.2;
+        float factor = 0.05;
         if (angleError < 0)
             factor = - factor;
         rightCommand = factor;
         leftCommand = -factor;
     }
     else {
-        float factor = 0.5;
+        float factor = 0.2;
         rightCommand = factor;//+angleError*0.1  => terme optionel, "pseudo correction angulaire";
         leftCommand = factor;//-angleError*0.1   => terme optionel, "pseudo correction angulaire";
     }
@@ -91,15 +88,14 @@ inline bool aim(Gladiator* gladiator, const Vector2& target, bool showLogs)
 
 // i want to get the coordiantes of the neighbor that has no wall 
 Vector2 getAccessibleNeighbor(Gladiator *gladiator) {
-    // this function checks if the maze is accessible
-    
+
     // get the position of the robot
     auto posRaw = gladiator->robot->getData().position;
-    Vector2 pos{posRaw.x, posRaw.y};
     // get the i j of the robot
-    Vector2 ij = getIJfromXY(pos.x(), pos.y());
-    int i = (u_int8_t) ij.x();
-    int j = (u_int8_t) ij.y();
+    int ret[2];
+    getIJfromXY(posRaw.x, posRaw.y,ret); // Fix: Use curly braces for initialization
+    int i = ret[0];
+    int j = ret[1]; 
 
     const MazeSquare *square = gladiator->maze->getNearestSquare();
     // check the if a direction is not null take it other  return -1, -1 
@@ -111,24 +107,21 @@ Vector2 getAccessibleNeighbor(Gladiator *gladiator) {
         return getXYfromIJ(i-1, j);
     } else if (square->southSquare != NULL) {
         return getXYfromIJ(i, j-1);
-    }
-    return Vector2(-1, -1);// shoudld  never arrive
-
+    }else return Vector2(-1, -1);
+    
+    
 }
-
 
 // get i j and from x y i and j to meters
-Vector2 getIJfromXY(float x, float y) {
-    float CELL_SIZE = 3.0/14;
-    int i = (int) (x / CELL_SIZE);
-    int j = (int) (y / CELL_SIZE);
-    return Vector2(i, j);
+
+void getIJfromXY(float x, float y, int* ret) {
+    ret[0] = (int) (x / CELL_SIZE);
+    ret[1] = (int) (y / CELL_SIZE);
+
 }
 
-// meters to ij 
-// returns the x y coordinates of the center of the cell (i, j)
-Vector2 getXYfromIJ(int i, int j) {
-    float CELL_SIZE = 3.0/14;
-    return Vector2(i * CELL_SIZE + 0.5*CELL_SIZE, j * CELL_SIZE + 0.5*CELL_SIZE);
+// get x y and from i and j 
+Vector2 getXYfromIJ(int i, int j){
+    return Vector2(i*CELL_SIZE + 0.5*CELL_SIZE, j*CELL_SIZE+0.5*CELL_SIZE);
 }
 

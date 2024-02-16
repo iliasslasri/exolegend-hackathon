@@ -1,9 +1,13 @@
 #ifndef DECOUVERTE_H
 #define DECOUVERTE_H
+# include "gladiator.h"
+#include <cmath>
+#undef abs
+
+#define CELL_SIZE 3.0/14
 
 
-bool map[12][12];
-
+/************************* Vect2 class ***********************/
 class Vector2 {
 public:
     Vector2() : _x(0.), _y(0.) {}
@@ -32,10 +36,12 @@ private:
     float _x, _y;
 };
 
-inline bool aim(Gladiator* gladiator, const Vector2& target, bool showLogs);
+
 Vector2 getAccessibleNeighbor(Gladiator *gladiator);
-Vector2 getIJfromXY(float x, float y);
+void getIJfromXY(float x, float y, int *t);
 Vector2 getXYfromIJ(int i, int j);
 
+float moduloPi(float);
+bool aim(Gladiator* , const Vector2& , bool );
 
 #endif // DECOUVERTE_H

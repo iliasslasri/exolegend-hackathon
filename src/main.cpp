@@ -1,7 +1,5 @@
 #include "gladiator.h"
 #include "decouverte.h"
-#include <cmath>
-#undef abs
 
 // x,y représentent des coordonnées en m
 // Vector{1.5,1.5} représente le point central
@@ -9,10 +7,14 @@
 // x = i * CELL_SIZE + 0.5*CELL_SIZE
 // y = j * CELL_SIZE + 0.5*CELL_SIZE
 // avec CELL_SIZE = 3.0/14 (~0.214)
-
+//bool carte0[12][12] = {false};
 Gladiator* gladiator;
 
 void reset() {
+    // auto posRaw = gladiator->robot->getData().position;
+    // int coords[2];
+    // getIJfromXY(posRaw.x, posRaw.y,coords);
+    // carte0[coords[0]][coords[1]] = true;
 }
 
 
@@ -32,7 +34,7 @@ void loop() {
         
         // later it should be undiscovered
         
-        Vector2 cell_vector = getAccessibleNeighbor(gladiator);
+        auto cell_vector = getAccessibleNeighbor(gladiator);
         if (cell_vector.x() == -1 && cell_vector.y() == -1) {
             gladiator->log("no accessible neighbor");
             return;
