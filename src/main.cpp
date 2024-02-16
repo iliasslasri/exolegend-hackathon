@@ -1,4 +1,5 @@
 #include "gladiator.h"
+#include "decouverte.h"
 Gladiator* gladiator;
 void reset();
 void setup() {
