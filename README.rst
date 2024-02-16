@@ -1,8 +1,8 @@
 .. |preinstall_link| replace:: https://gitlab.com/exolegend/preinstall/
 .. |git_link_windws| replace:: https://www.git-scm.com/download/win
 
-.. |git_exolegend| replace:: git@gitlab-design.exotec.com:mohamed.alglawi/exolegend.git
-.. |git_exolegend_win| replace:: git@gitlab-design.exotec.com:mohamed.alglawi/exolegend-win.git
+.. |git_exolegend| replace:: git@gitlab.com:exolegend/exolegend.git
+.. |git_exolegend_win| replace:: git@gitlab.com:exolegend/exolegend-win.git
 
 .. |version| replace:: 2.0.3-rc3
 .. |virtuals_password| replace:: __LeM0tDePa55eLePlusS1mpleDuM0nde_!!!_;)
