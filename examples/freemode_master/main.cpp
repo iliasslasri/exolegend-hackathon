@@ -13,7 +13,7 @@ void setup() {
     gladiator->game->setMinotorPin(1234); //GFA 4.3.6
     //positionner le robot aux coordonnées de la première base (0.1; 1.6)
     Position initialPosition = {0.1, 1.6, 0};
-    gladiator->game->enableFreeMode(RemoteMode::OFF,initialPosition); //GFA 4.3.2
+    gladiator->game->enableFreeMode(RemoteMode::ON,initialPosition); //GFA 4.3.2
     //lorsque le robot commencera en free mode sa position de départ sera la valeur de initalPosition
     //Seuls les encodeurs seront utilisés pour calculer la position du robot (elle sera moins précise que celle lorsque le robot est connecté à l'arène)
     //IL est toujours possible de connecter l'outil de debugage minotor au robot lorque celui ci est en free mode

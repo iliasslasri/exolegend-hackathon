@@ -1,28 +1,48 @@
 #include "gladiator.h"
 #include "decouverte.h"
+#include <cmath>
+#undef abs
+
+// x,y représentent des coordonnées en m
+// Vector{1.5,1.5} représente le point central
+// Pour convertir une cordonnée de cellule (i,j) (0<=i<=13, 0<=j<=13) :
+// x = i * CELL_SIZE + 0.5*CELL_SIZE
+// y = j * CELL_SIZE + 0.5*CELL_SIZE
+// avec CELL_SIZE = 3.0/14 (~0.214)
+
 Gladiator* gladiator;
-void reset();
+
+void reset() {
+}
+
+
+
 void setup() {
     //instanciation de l'objet gladiator
     gladiator = new Gladiator();
     //enregistrement de la fonction de reset qui s'éxecute à chaque fois avant qu'une partie commence
     gladiator->game->onReset(&reset);
-    gladiator->game->enableFreeMode(RemoteMode::OFF);
-}
-
-void reset() {
-    //fonction de reset:
-    //initialisation de toutes vos variables avant le début d'un match
 }
 
 void loop() {
-    if(gladiator->game->isStarted()) { //tester si un match à déjà commencer
-        //code de votre stratégie :
-        //appliquer une vitesse de 0.6m/s au deux roue
-        gladiator->control->setWheelSpeed(WheelAxis::RIGHT, 0.6); //controle de la roue droite
-        gladiator->control->setWheelSpeed(WheelAxis::LEFT, 0.6); //control de la roue gauche
-        //Lorsque le jeu commencera le robot ira en ligne droite
-        delay(100);
+    if (gladiator->game->isStarted())
+    {
+        static unsigned i = 0;
+        bool showLogs = (i%50 == 0);
+        
+        // later it should be undiscovered
+        
+        Vector2 cell_vector = getAccessibleNeighbor(gladiator);
+        if (cell_vector.x() == -1 && cell_vector.y() == -1) {
+            gladiator->log("no accessible neighbor");
+            return;
+        }
+        if (aim(gladiator, cell_vector, showLogs))
+        {
+            gladiator->log("target atteinte !");
+        }
+        i++;
     }
-    //La consigne en vitesse est forcée à 0 lorsque aucun match n'a débuté.
+    delay(10); // boucle à 100Hz
 }
+
