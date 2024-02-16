@@ -7,7 +7,6 @@ void setup() {
     gladiator = new Gladiator();
     //enregistrement de la fonction de reset qui s'éxecute à chaque fois avant qu'une partie commence
     gladiator->game->onReset(&reset);
-    gladiator->game->enableFreeMode(RemoteMode::OFF);
 }
 
 void reset() {
@@ -16,13 +15,18 @@ void reset() {
 }
 
 void loop() {
-    if(gladiator->game->isStarted()) { //tester si un match à déjà commencer
-        //code de votre stratégie :
-        //appliquer une vitesse de 0.6m/s au deux roue
-        gladiator->control->setWheelSpeed(WheelAxis::RIGHT, 0.6); //controle de la roue droite
-        gladiator->control->setWheelSpeed(WheelAxis::LEFT, 0.6); //control de la roue gauche
-        //Lorsque le jeu commencera le robot ira en ligne droite
-        delay(100);
+    if (gladiator->game->isStarted()){
+        static unsigned i = 0;
+        bool showLogs = (i%50 == 0);
+        
+        if (aim(gladiator, {1.5, 1.5}, showLogs)) // TODO : Remove show logs from aim
+        {
+            gladiator->log("target atteinte !");
+        }
+        i++;
     }
-    //La consigne en vitesse est forcée à 0 lorsque aucun match n'a débuté.
+    else {
+        gladiator->log("attente du début du match");
+        }
+    delay(10); // boucle à 100Hz
 }
