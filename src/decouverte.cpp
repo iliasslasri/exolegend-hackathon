@@ -51,3 +51,30 @@ bool aim(Gladiator* gladiator, const Vector2& target, bool showLogs)
 
     return targetReached;
 }
+
+// hasWall() returns true if there is a wall in the direction of the angle
+bool hasWall(Gladiator* gladiator, const MazeSquare* nearestSquare, const float angle){
+    if(angle > 2*M_PI- (M_PI/4) || angle < M_PI/4){
+        // test if north is a wall 
+        if(nearestSquare->eastSquare == NULL){
+            gladiator->log("east is a wall");
+            return true;
+        }
+    } else if(angle < 2*M_PI- (M_PI/4) && angle > M_PI+ (M_PI/4)){
+        // test if east is a wall
+        if(nearestSquare->southSquare == NULL){
+            return true;
+        }
+    } else if(angle > M_PI/4 && angle < 3*M_PI/4){
+        // test if east is a wall
+        if(nearestSquare->northSquare == NULL){
+            return true;
+        }
+    } else {
+        // test if west is a wall
+        if(nearestSquare->westSquare == NULL){
+            return true;
+        }
+    }
+    return false;
+}
