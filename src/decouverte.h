@@ -43,5 +43,6 @@ Vector2 getXYfromIJ(int i, int j);
 
 float moduloPi(float);
 bool aim(Gladiator* , const Vector2& , bool );
-
+// function returns true if the direction of the robot has a wall in it
+bool hasWall(Gladiator* gladiator, const MazeSquare* nearestSquare, const float angle);
 #endif // DECOUVERTE_H
