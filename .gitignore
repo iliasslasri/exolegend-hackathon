@@ -3,3 +3,6 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+.gitignore
+memory.bin
+virtuals-2.0.3-rc8-b378e8b/*
