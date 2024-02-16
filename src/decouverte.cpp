@@ -87,29 +87,26 @@ bool aim(Gladiator* gladiator, const Vector2& target, bool showLogs)
 
 
 // i want to get the coordiantes of the neighbor that has no wall 
-Vector2 getAccessibleNeighbor(Gladiator *gladiator) {
+int getAccessibleNeighbor(Gladiator *gladiator,Position posRaw, Vector2 vect) {
 
-    // get the position of the robot
-    auto posRaw = gladiator->robot->getData().position;
-    // get the i j of the robot
-    int ret[2];
-    getIJfromXY(posRaw.x, posRaw.y,ret); // Fix: Use curly braces for initialization
-    int i = ret[0];
-    int j = ret[1]; 
+    
 
     const MazeSquare *square = gladiator->maze->getNearestSquare();
     // check the if a direction is not null take it other  return -1, -1 
     if (square->northSquare != NULL) {
-        return Vector2(i, j+1);
+        vect.set_xy(posRaw.x, posRaw.y+CELL_SIZE);
+        return 0;
     } else if (square->eastSquare != NULL) {
-        return getXYfromIJ(i+1, j);
+        vect.set_xy(posRaw.x+CELL_SIZE, posRaw.y);
+        return 0;
     } else if (square->westSquare != NULL) {
-        return getXYfromIJ(i-1, j);
+        vect.set_xy(posRaw.x-CELL_SIZE, posRaw.y);
+        return 0;
     } else if (square->southSquare != NULL) {
-        return getXYfromIJ(i, j-1);
-    }else return Vector2(-1, -1);
-    
-    
+        vect.set_xy(posRaw.x, posRaw.y-CELL_SIZE) ;   
+        return 0;
+    }else return -1;
+       
 }
 
 // get i j and from x y i and j to meters
@@ -151,3 +148,21 @@ bool hasWall(Gladiator* gladiator, const MazeSquare* nearestSquare, const float 
     }
     return false;
 }
+
+
+void set_direction(Gladiator Gladiator, Direction Direction){
+    //
+
+}
+
+
+void turn_right_90(Gladiator gladiator){
+
+}
+
+
+void turn_left_90(Gladiator Gladiator){
+
+}
+
+void getNeighbors(){}

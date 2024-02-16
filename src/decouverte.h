@@ -32,12 +32,17 @@ public:
     float cross(const Vector2& other) const { return _x*other._y - _y*other._x; }
     float angle(const Vector2& m) const { return std::atan2(cross(m), dot(m)); }
     float angle() const { return std::atan2(_y, _x); }
+    
+    void set_xy(float  x, float  y){
+        _x = x;
+        _y = y;
+    }
 private:
     float _x, _y;
 };
 
 
-Vector2 getAccessibleNeighbor(Gladiator *gladiator);
+int getAccessibleNeighbor(Gladiator *gladiator,Position, Vector2);
 void getIJfromXY(float x, float y, int *t);
 Vector2 getXYfromIJ(int i, int j);
 
