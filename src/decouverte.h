@@ -6,7 +6,9 @@
 
 #define CELL_SIZE 3.0/14
 
-
+// Tableau de booleans 14x14
+#define MAZE_SIZE 14
+extern bool grille[MAZE_SIZE][MAZE_SIZE];
 /************************* Vect2 class ***********************/
 class Vector2 {
 public:
@@ -42,7 +44,7 @@ private:
 };
 
 
-int getAccessibleNeighbor(Gladiator *gladiator,Position, Vector2);
+Position getAccessibleNeighbor(Gladiator *gladiator, Position);
 void getIJfromXY(float x, float y, int *t);
 Vector2 getXYfromIJ(int i, int j);
 

@@ -7,7 +7,7 @@ enum Direction {
     WEST,
     SOUTH
 };
-
+bool grille[MAZE_SIZE][MAZE_SIZE]{false};
 void randomwalk(Gladiator *gladiator) {
     // we will implement a random walk
     
@@ -87,26 +87,68 @@ bool aim(Gladiator* gladiator, const Vector2& target, bool showLogs)
 
 
 // i want to get the coordiantes of the neighbor that has no wall 
-int getAccessibleNeighbor(Gladiator *gladiator,Position posRaw, Vector2 vect) {
-
-    
-
+Position getAccessibleNeighbor(Gladiator *gladiator, Position posRaw) {
     const MazeSquare *square = gladiator->maze->getNearestSquare();
+    int ret[2];
+    //getIJfromXY(lastSquare.x, lastSquare.y, ret);
     // check the if a direction is not null take it other  return -1, -1 
-    if (square->northSquare != NULL) {
-        vect.set_xy(posRaw.x, posRaw.y+CELL_SIZE);
-        return 0;
-    } else if (square->eastSquare != NULL) {
-        vect.set_xy(posRaw.x+CELL_SIZE, posRaw.y);
-        return 0;
+    if (square->eastSquare != NULL) {
+        
+        // adding the new position to the table using getIJfromXY
+        getIJfromXY(posRaw.x + (float)(CELL_SIZE+0.5*CELL_SIZE), posRaw.y, ret);
+        if(( grille[ret[0]][ret[1]] == false)){
+            grille[ret[0]][ret[1]] = true;
+            return Position {posRaw.x + (float)(CELL_SIZE+0.5*CELL_SIZE), posRaw.y, 0};
+        }
+    } else if (square->northSquare != NULL) {
+        
+        getIJfromXY(posRaw.x, posRaw.y+ (float)(CELL_SIZE+0.5*CELL_SIZE), ret);
+        if(( grille[ret[0]][ret[1]] == false)){
+            grille[ret[0]][ret[1]] = true;
+            return Position {posRaw.x, posRaw.y + (float)(CELL_SIZE+0.5*CELL_SIZE), (float)M_PI/2};
+        }
     } else if (square->westSquare != NULL) {
-        vect.set_xy(posRaw.x-CELL_SIZE, posRaw.y);
-        return 0;
+        
+        getIJfromXY(posRaw.x - (float)(CELL_SIZE+0.5*CELL_SIZE), posRaw.y, ret);
+        if(( grille[ret[0]][ret[1]] == false)){
+            grille[ret[0]][ret[1]] = true;
+            return Position {posRaw.x - (float)(CELL_SIZE+0.5*CELL_SIZE), posRaw.y, (float)M_PI};
+        }
     } else if (square->southSquare != NULL) {
-        vect.set_xy(posRaw.x, posRaw.y-CELL_SIZE) ;   
-        return 0;
-    }else return -1;
-       
+        
+        getIJfromXY(posRaw.x, posRaw.y - (float)(CELL_SIZE+0.5*CELL_SIZE), ret);
+        if(( grille[ret[0]][ret[1]] == false)){
+            grille[ret[0]][ret[1]] = true;
+            return Position {posRaw.x, posRaw.y - (float)(CELL_SIZE+0.5*CELL_SIZE), (float)(M_PI/2 + M_PI)};
+        }
+    } // Then loops without the second condition
+    else if (square->eastSquare != NULL) {
+        
+        // adding the new position to the table using getIJfromXY
+        getIJfromXY(posRaw.x+ (float)(CELL_SIZE+0.5*CELL_SIZE), posRaw.y, ret);
+        grille[ret[0]][ret[1]] = true;
+        return Position {posRaw.x + (float)(CELL_SIZE+0.5*CELL_SIZE), posRaw.y, 0};
+        
+    } else if (square->northSquare != NULL) {
+        
+        getIJfromXY(posRaw.x, posRaw.y+ (float)(CELL_SIZE+0.5*CELL_SIZE), ret);
+        grille[ret[0]][ret[1]] = true;
+        return Position {posRaw.x, posRaw.y + (float)(CELL_SIZE+0.5*CELL_SIZE), (float)M_PI/2};
+    
+    } else if (square->westSquare != NULL) {
+        
+        getIJfromXY(posRaw.x - (float)(CELL_SIZE + 0.5*CELL_SIZE), posRaw.y, ret);
+        grille[ret[0]][ret[1]] = true;
+        return Position {posRaw.x - (float)(CELL_SIZE + 0.5*CELL_SIZE), posRaw.y, (float)M_PI};
+    
+    } else if (square->southSquare != NULL) {
+        
+        getIJfromXY(posRaw.x, posRaw.y - (float)(CELL_SIZE + 0.5*CELL_SIZE), ret);
+        grille[ret[0]][ret[1]] = true;
+        return Position {posRaw.x, posRaw.y - (float)(CELL_SIZE + 0.5*CELL_SIZE), (float)(M_PI/2 + M_PI)};
+
+    }
+    return Position {-1, -1, -1};   
 }
 
 // get i j and from x y i and j to meters
