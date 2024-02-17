@@ -1,12 +1,13 @@
 #include "decouverte.h"
 
+const float pi = 3.14159265358979323846; 
 
-enum Direction {
-    NORTH,
-    EAST,
-    WEST,
-    SOUTH
-};
+
+const float NORTH = pi/2;
+const float EAST = 0;
+const float SOUTH = -pi/2;
+const float WEST = pi;
+
 
 void randomwalk(Gladiator *gladiator) {
     // we will implement a random walk
@@ -150,19 +151,32 @@ bool hasWall(Gladiator* gladiator, const MazeSquare* nearestSquare, const float 
 }
 
 
-void set_direction(Gladiator Gladiator, Direction Direction){
-    //
+// void set_direction(Gladiator Gladiator, float angle){
+//     //
+//     while (angle - Direction > 0.1){
+//         gladiator->control->setWheelSpeed(WheelAxis::RIGHT, 0.6); //controle de la roue droite
+//         gladiator->control->setWheelSpeed(WheelAxis::LEFT, -0.6); //control de la roue gauche
+//     }
+// }
 
+
+// void turn_right_90(Gladiator gladiator){
+//     gladiator->control->setWheelSpeed(WheelAxis::RIGHT, 0.6); //controle de la roue droite
+//     gladiator->control->setWheelSpeed(WheelAxis::LEFT, -0.6); //control de la roue gauche
+//     delay(500);
+//     gladiator->control->setWheelSpeed(WheelAxis::RIGHT, 0); //controle de la roue droite
+//     gladiator->control->setWheelSpeed(WheelAxis::LEFT, 0); //control de la roue gauche
+// }
+
+
+void turn_north(Gladiator *gladiator, Position posRaw){
+    if (NORTH - posRaw.a > 0.1){
+        gladiator->control->setWheelSpeed(WheelAxis::RIGHT, 0.6); //controle de la roue droite
+        gladiator->control->setWheelSpeed(WheelAxis::LEFT, -0.6); //control de la roue gauche
+    }else if ( NORTH - posRaw.a < -0.1){
+        gladiator->control->setWheelSpeed(WheelAxis::RIGHT, -0.6); //controle de la roue droite
+        gladiator->control->setWheelSpeed(WheelAxis::LEFT, 0.6); //control de la roue gauche
+    }
 }
 
-
-void turn_right_90(Gladiator gladiator){
-
-}
-
-
-void turn_left_90(Gladiator Gladiator){
-
-}
-
-void getNeighbors(){}
+void getNeighbors(Gladiator *Gladiator){}

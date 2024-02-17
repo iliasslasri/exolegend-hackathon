@@ -50,4 +50,7 @@ float moduloPi(float);
 bool aim(Gladiator* , const Vector2& , bool );
 // function returns true if the direction of the robot has a wall in it
 bool hasWall(Gladiator* gladiator, const MazeSquare* nearestSquare, const float angle);
+
+// directions 
+void turn_north(Gladiator *gladiator, Position posRaw);
 #endif // DECOUVERTE_H
