@@ -1,6 +1,8 @@
 #include <stack>
+
 #include "gladiator.h"
-#include "pile.cpp"
+#include "decouverte.h"
+
 Gladiator* gladiator;
 
 float kw =2;//2.f;
@@ -12,13 +14,16 @@ float consl = 0.f;
 float consr = 0.f;
 bool has_goal = false;
 bool turned = false;
-MazeSquare* last = nullptr;
+const MazeSquare* last = nullptr;
 Position goal {0, 0, 0};
-//int grid[14*14];
+const int TAILLE_MAX = 40;
+const MazeSquare* pile[TAILLE_MAX]; // notre pile
+int sommet = -1;
 int i = 0;
-unsigned long last_time = 0;
+unsigned long last_time = millis();
 bool reached_target = false;
-Stack stack;
+using Tableau = std::array<std::array<int, 12>, 12>;
+Tableau isVisited {0};
 
 
 double reductionAngle(double x)
@@ -28,14 +33,7 @@ double reductionAngle(double x)
         x += 2 * PI;
     return x - PI;
 }
-bool cmp_s(MazeSquare* s1, MazeSquare* s2) {
-    if (s1!=nullptr && s2!=nullptr) {
-        if (s1->i == s2->i && s2->j == s1->j) {
-            return true;
-        }
-    }
-    return false;
-}
+
 
 bool turn(Position cons, Position pos) {
     double dx = cons.x - pos.x;
@@ -44,7 +42,7 @@ bool turn(Position cons, Position pos) {
     gladiator->log("turn dx=%f dy=%f rho=%f d=%f cx=%f cy=%f x=%f y=%f", dx, dy, rho, reductionAngle(rho - pos.a), cons.x, cons.y, pos.x, pos.y);
     if (abs(reductionAngle(rho - pos.a)) > 0.1) {
         float consw = kw * reductionAngle(rho - pos.a);
-        //consw = consw > wlimit ? (consw > 0 ? 1 : -1) * wlimit : consw;
+        consw = consw > wlimit ? (consw > 0 ? 1 : -1) * wlimit : consw;
 
         float consvl = -gladiator->robot->getRobotRadius() * consw; // GFA 3.6.2
         float consvr = gladiator->robot->getRobotRadius() * consw; // GFA 3.6.2
@@ -69,8 +67,8 @@ bool go_to(Position cons, Position pos)
         double consw = kw * reductionAngle(rho - pos.a);
 
         double consv = kv * d * cos(reductionAngle(rho - pos.a));
-        //consw = abs(consw) > wlimit ? (consw > 0 ? 1 : -1) * wlimit : consw;
-        //consv = abs(consv) > vlimit ? (consv > 0 ? 1 : -1) * vlimit : consv;
+        consw = abs(consw) > wlimit ? (consw > 0 ? 1 : -1) * wlimit : consw;
+        consv = abs(consv) > vlimit ? (consv > 0 ? 1 : -1) * vlimit : consv;
 
         consvl = consv - gladiator->robot->getRobotRadius() * consw; // GFA 3.6.2
         consvr = consv + gladiator->robot->getRobotRadius() * consw; // GFA 3.6.2
@@ -87,33 +85,24 @@ bool go_to(Position cons, Position pos)
     gladiator->control->setWheelSpeed(WheelAxis::LEFT, consvl, false);  // GFA 3.2.1
     return arrived;
 }
-
-
-bool isCoin(MazeSquare* square){
-    // returns true when the maze square is a corner
-    if (square->northSquare == nullptr && square->westSquare == nullptr){
-        return true;
-    }else if (square->northSquare == nullptr && square->eastSquare == nullptr){
-        return true;
-    }else if (square->southSquare == nullptr && square->westSquare == nullptr){
-        return true;
-    }else if (square->southSquare == nullptr && square->eastSquare == nullptr){
-        return true;
-    }else 
-        return false;
+int empiler(const MazeSquare* s) {
+    if (sommet < TAILLE_MAX) {
+        sommet++;
+        pile[sommet] = s;
+        
+        return 1;
+    }
+    return 0;
 }
 
-bool isEdge(MazeSquare* square){
-    // returns true when the maze square is an edge
-    if (square->northSquare == nullptr && square->southSquare == nullptr ){
-        return true;
-    }else if (square->eastSquare == nullptr && square->westSquare == nullptr){
-        return true;
-    }else 
-        return false;
-    
+const MazeSquare* depiler() {
+    const MazeSquare* s = nullptr;
+    if (sommet >= 0) {
+        s = pile[sommet];
+        sommet--;
+    }
+    return s;
 }
-
 
 
 
@@ -127,10 +116,16 @@ void reset() {
     last = nullptr;
     consl = 0.f;
     consr = 0.f;
-    last_time = 0;
+    last_time = millis();
     reached_target = false;
-    stack = Stack();
-    stack.push(*gladiator->maze->getNearestSquare());
+    sommet = -1;
+    gladiator->log("Reset done"); // GFA 4.5.1
+    // initialize the table of visited cells
+    for (size_t i = 0; i < 12; i++) {
+        for (size_t j = 0; j < 12; j++) {
+            isVisited[i][j] = 0;
+        }
+    }
 }
 
 void setup() {
@@ -140,102 +135,139 @@ void setup() {
     gladiator->game->onReset(&reset); // GFA 4.4.1
 }
 
+std::pair<int, int> flee_wall(int cur_i, int cur_j){
+    if (cur_i <= 6 && cur_j <= 6){
+        return {cur_i+1, cur_j+1};
+    }else if (cur_i <= 6 && cur_j > 6){
+        return {cur_i+1,cur_j-1};
+    }else if (cur_i > 6 && cur_j <= 6){
+        return {cur_i-1,cur_j+1};
+    }else{// >6 > 6
+        return {cur_i-1, cur_j-1};
+    }
+}
+
+
+
 // i want to add a timer so when i reach 20s i move to the target closest to the center
 int timer = 0;
 void loop() {
     if(gladiator->game->isStarted()) { //tester si un match à déjà commencer
         //code de votre stratégie
-        Position myPosition = gladiator->robot->getData().position;
+
+        // mettre à jour les cases par les quelles on est passé
         
-        if ( millis()-last_time >= 18000 ){
-            last_time = millis();
-            gladiator->log("Time is up, go to the center");
-            reached_target = go_to(goal, {1.5, 1.5});
-        }
-        //get 
-        if(!has_goal) {
-            
-            MazeSquare* target = nullptr;
-            gladiator->log("There is no goal, define a new goal");
-            const MazeSquare* square = gladiator->maze->getNearestSquare();
-            MazeSquare* temp = nullptr;
-            if(square->northSquare != nullptr && !cmp_s(temp, last)){
-                temp = square->northSquare;
-                while(temp !=nullptr && !cmp_s(temp,last)){
-                    last = target;
-                    target = temp;
-                    temp = temp->northSquare;
-                    gladiator->log("Can go north ");
-                }
-                gladiator->log("last is %d %d", last->i, last->j);
-                gladiator->log("target is %d %d", target->i, target->j);
-            }else if(square->eastSquare != nullptr&& !cmp_s(temp, last)){
-                temp = square->eastSquare;
-                while(temp !=nullptr && !cmp_s(temp,last)){
-                    last = target;
-                    target = temp;
-                    temp = temp->eastSquare;
-                }
-            }else if(square->southSquare != nullptr && !cmp_s(temp, last)){
-                temp = square->southSquare;
-                while(temp !=nullptr && !cmp_s(temp, last)){
-                    last = target;
-                    target = temp;
-                    temp = temp->southSquare;
-                }
-            }else if(square->westSquare != nullptr && !cmp_s(temp, last)){
-                temp = square->westSquare;
-                while(temp !=nullptr && !cmp_s(temp, last)){
-                    last = target;
-                    target = temp;
-                    temp = temp->westSquare;
-                }
-            }else if(square->northSquare != nullptr ){//&& (square->eastSquare !=nullptr || square->westSquare!=nullptr)){
-                temp = square->northSquare;
-                while(temp !=nullptr){
-                    last = target;
-                    target = temp;
-                    temp = temp->northSquare;
-                    gladiator->log("Can go north ");
-                }
-            }else if(square->eastSquare != nullptr){
-                temp = square->eastSquare;
-                while(temp !=nullptr){
-                    last = target;
-                    target = temp;
-                    temp = temp->eastSquare;
-                }
-            }else if(square->southSquare != nullptr){
-                temp = square->southSquare;
-                while(temp !=nullptr){
-                    last = target;
-                    target = temp;
-                    temp = temp->southSquare;
-                }
-            }else if(square->westSquare != nullptr){
-                temp = square->westSquare;
-                while(temp !=nullptr){
-                    last = target;
-                    target = temp;
-                    temp = temp->westSquare;
-                }
+        const MazeSquare* cur = gladiator->maze->getNearestSquare();
+        
+        // il faut se casser des murs et marquer là ou on passe sachat que ça peut être colorié
+
+
+        if (cur != nullptr){ 
+            int nb = get_nb_neighbors(cur);
+            // visited 2 veut dire que soit c'est un cul de sac ou un sommet chemin (comme une arête d'un graphe) pas très interessant
+            if ((nb == 1) || (nb == 2)){
+                isVisited[cur->i][cur->j] = 2;
+            }else
+            {
+                isVisited[cur->i][cur->j] = 1;
             }
+        }
+
+        Position myPosition = gladiator->robot->getData().position;
+        const MazeSquare* target = nullptr;
+
+
+        // TODO : si encloisonnée go to center
+
+        /////////// --------- Tant qu'il peut partir, qu'il est pa dans un cul de sac il revient vers le père
+
+        // todo au dessus d'un mur
+        // if we are above a wall go to the center
+        // if (myPosition.x > 0.5 && myPosition.x < 1.5 && myPosition.y > 0.5 && myPosition.y < 1.5){
+        //     gladiator->log("I am above a wall, go to the center");
+        //     std::pair<int, int> flee = flee_wall(cur->i, cur->j);
+        //     target = gladiator->maze->getSquare(flee.first, flee.second);
+        //     has_goal = true;
+        // }
+
+        // taiter le problème du rétricissement 
+        gladiator->log("TIME diff is  %ld", millis()-last_time);
+        // if ( millis()-last_time >= 5000 ){
+        //     // check if we are in the borders
+            
+
+
+        //     last_time = millis();
+        //     gladiator->log("Time is up, go to the center %ld ", last_time);
+        //     std::pair<int, int> flee = flee_wall(cur->i, cur->j);
+        //     float square_size = gladiator->maze->getSquareSize();
+        //     target = gladiator->maze->getSquare(flee.first, flee.second);
+        // }
+        
+        if(!has_goal) {
+            gladiator->log("HAVE NO GOAL");
+            //const MazeSquare * target = nullptr;
+            target = nullptr;
+            const MazeSquare *square = nullptr;
+            const MazeSquare *neighbors[4]{nullptr}; // East, North, West, South
+            if (sommet == -1) { // pas de but et pas de case dans la pile
+                gladiator->log("Stack is empty lets discover !");
+                square = gladiator->maze->getNearestSquare();
+                // empiler(square = gladiator->maze->getNearestSquare());
+                gladiator->log("coordiantes of square: %d %d ", square->i, square->j);
+                getNeighbors_bis(gladiator, square,  neighbors, isVisited, last);
+                // log all the coordinates of the neighbors 
+                gladiator->log("number  of neighbors %d", nb_far_neighors(neighbors));
+                gladiator->log("Printing");
+                for (size_t p = 0; p < 4; p++) {
+                    if (neighbors[p] != nullptr){
+                        gladiator->log("neighbor %ld \t i :  %d  j:    %d ", p ,neighbors[p]->i, neighbors[p]->j);
+                    }
+                }
+                gladiator->log("Printing after");
+
+                // push to the neighbors to the dfs stack
+                // faire le dfs ou on prends une branche quand on decide de prednre une direction               
+                
+                for (int k = 0; k < 4; k++) {
+                    if (neighbors[k] != nullptr) {
+                        if (isLeaf(neighbors[k])) {
+                            // push your father
+                            gladiator->log("there is a leaf!!!!! coords  %d %d ", neighbors[k]->i, neighbors[k]->j);
+                            empiler(square);
+                            gladiator->log("coordiantes of emmpile : %d %d ", square->i, square->j);
+                        }
+                        //empiler(square);
+                        empiler(neighbors[k]);
+                        gladiator->log("coordiantes of emmpile : %d %d ", neighbors[k]->i, neighbors[k]->j);
+                        
+                    }
+                }  
+            }
+            target = depiler();
+                // the target could have disappeared but still go as far as before 
+                // test if the target is still in the game 
             if (target == nullptr) {
-                gladiator->log("Go nowhere, go back ! ");
+                gladiator->log("target is not a wall : %d %d ", target->i, target->j);
                 target = last;
             }
-
-            if (target!=nullptr) {
-                //get the position of the target
+            else{ 
+                if(!isLeaf(target)){
+                    sommet = -1;// last modification
+                } 
+                last = square;
+                gladiator->log("coordiantes of depile (target) : %d %d ", target->i, target->j);
                 float square_size = gladiator->maze->getSquareSize();
-                last = (MazeSquare*) square;
+                last = square;
                 goal.x =  (target->i + 0.5) * square_size;
                 goal.y = (target->j + 0.5) * square_size;
                 gladiator->saveUserWaypoint(goal.x, goal.y);
                 gladiator->log("Go to new target x=%f; y=%f", goal.x, goal.y);
                 has_goal = true;
+                
             }
-        } else {
+        } // has a goal
+        else {
             reached_target = false;
             if (!turned) {
                 bool finish_turning = turn(goal, myPosition);
@@ -245,11 +277,12 @@ void loop() {
                 delay(10); // TODO : à supprimer
             }else {
                 reached_target = go_to(goal, myPosition);
-                delay(100); // TODO : supprime
+                delay(10); // TODO : supprime
             }
 
             if (reached_target)
             {
+                
                 has_goal = false;
                 turned = false;
                 gladiator->log("Target reached ! ");
@@ -258,11 +291,10 @@ void loop() {
         }
 
     }
-    delay(10);// was 10
+    delay(100);// was 10
     timer+=10;
     
 }
-
 
 
 

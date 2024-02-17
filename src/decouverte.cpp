@@ -1,12 +1,11 @@
 #include "decouverte.h"
 
-const float pi = 3.14159265358979323846; 
 
 
-const float NORTH = pi/2;
+const float NORTH = M_PI/2;
 const float EAST = 0;
-const float SOUTH = -pi/2;
-const float WEST = pi;
+const float SOUTH = -M_PI/2;
+const float WEST = M_PI;
 
 
 void randomwalk(Gladiator *gladiator) {
@@ -39,7 +38,14 @@ inline float moduloPi(float a) // return angle in [-pi; pi]
 {
     return (a < 0.0) ? (std::fmod(a - M_PI, 2*M_PI) + M_PI) : (std::fmod(a + M_PI, 2*M_PI) - M_PI);
 }
-
+bool cmp_s(const MazeSquare* s1,const MazeSquare* s2) {
+    if (s1!=nullptr && s2!=nullptr) {
+        if (s1->i == s2->i && s2->j == s1->j) {
+            return true;
+        }
+    }
+    return false;
+}
 bool aim(Gladiator* gladiator, const Vector2& target, bool showLogs)
 {
     constexpr float ANGLE_REACHED_THRESHOLD = 0.1;
@@ -179,6 +185,218 @@ void turn_north(Gladiator *gladiator, Position posRaw){
     }
 }
 
-void getNeighbors(Gladiator *Gladiator){}
+bool isCoin(MazeSquare* square){
+    // returns true when the maze square is a corner
+    if (square->northSquare == nullptr && square->westSquare == nullptr){
+        return true;
+    }else if (square->northSquare == nullptr && square->eastSquare == nullptr){
+        return true;
+    }else if (square->southSquare == nullptr && square->westSquare == nullptr){
+        return true;
+    }else if (square->southSquare == nullptr && square->eastSquare == nullptr){
+        return true;
+    }else 
+        return false;
+}
 
 
+bool isEdge(const MazeSquare* square){
+    // returns true when the maze square is an edge
+    if (square->northSquare == nullptr && square->southSquare == nullptr ){
+        return true;
+    }else if (square->eastSquare == nullptr && square->westSquare == nullptr){
+        return true;
+    }else 
+        return false;
+    
+}
+
+void getNeighbors(Gladiator *gladiator,const MazeSquare * square, const MazeSquare* neighbors[4]){
+    // on va essayer d'avoir le neighbor le plus loin dans la direction de la direction actuelle
+
+
+    const MazeSquare* target = nullptr;
+    const MazeSquare* temp = nullptr;
+    
+    if(square->eastSquare != nullptr){
+        temp = square->eastSquare;
+        while((temp !=nullptr)){
+            target = temp;
+            temp = temp->eastSquare;
+        }
+        neighbors[0] = target;
+    }else if(square->northSquare != nullptr){
+        temp = square->northSquare;
+        while(temp !=nullptr){
+            target = temp;
+            temp = temp->northSquare;
+            gladiator->log("Can go north ");
+        }
+        neighbors[1] = target;
+    }else if(square->westSquare != nullptr){
+        temp = square->westSquare;
+        while(temp !=nullptr){
+            target = temp;
+            temp = temp->westSquare;
+            gladiator->log("Can go west ");
+        }
+        neighbors[2] = target;
+    }else if(square->southSquare != nullptr ){//&& (square->eastSquare !=nullptr || square->westSquare!=nullptr)){
+        temp = square->southSquare;
+        while((temp !=nullptr)){
+            target = temp;
+            temp = temp->southSquare;
+            gladiator->log("Can go south ");
+        }
+        neighbors[3] = target;
+    }
+    return;
+}
+
+
+void getNeighbors_bis(Gladiator *gladiator,const MazeSquare * square, const MazeSquare* neighbors[4], Tableau &isVisited,const MazeSquare *last){
+    // on va essayer d'avoir le neighbor le plus loin dans la direction de la direction actuelle
+
+    const MazeSquare* target[4]{nullptr, nullptr, nullptr, nullptr};
+    const MazeSquare* temp = nullptr;
+    const MazeSquare* checkpoint[4]{nullptr, nullptr, nullptr, nullptr};
+    gladiator->log("Getting neighbors inside function");
+    if (square == nullptr){
+        gladiator->log("square is null");
+        return;
+    }
+    if(square->eastSquare != nullptr){
+        temp = square->eastSquare;
+        while(temp !=nullptr){
+             if (!isEdge(temp)&& (isVisited[temp->i][temp->j] == 0)){
+                checkpoint[0] = temp;
+                gladiator->log("interesting edge");
+            }else if (!isEdge(temp)) // n'importe lequel
+                checkpoint[0] = temp;
+            gladiator->log("exploring east %d %d", temp->i, temp->j);
+            target[0] = temp;
+            temp = temp->eastSquare;
+        }
+    }
+
+    if(square->northSquare != nullptr){
+        temp = square->northSquare;
+        while(temp !=nullptr){
+            if (!isEdge(temp) && (isVisited[temp->i][temp->j] == 0)){
+                checkpoint[1] = temp;
+            }else if (!isEdge(temp)) // n'importe lequel
+                checkpoint[1] = temp;
+            
+            gladiator->log("exploring north %d %d", temp->i, temp->j);
+            target[1] = temp;
+            temp = temp->northSquare;
+            
+        }
+    }
+    if(square->westSquare != nullptr){
+        temp = square->westSquare;
+        while(temp !=nullptr) { // checkpoint interessant pas encore découvert
+            if (!isEdge(temp) && (isVisited[temp->i][temp->j] == 0)){
+                checkpoint[2] = temp;
+            }else if (!isEdge(temp)) // n'importe lequel
+                checkpoint[2] = temp;
+            
+            gladiator->log("exploring west %d %d", temp->i, temp->j);
+            target[2] = temp;
+            temp = temp->westSquare;
+        }
+    }
+    if(square->southSquare != nullptr ){//&& (square->eastSquare !=nullptr || square->westSquare!=nullptr)){
+        temp = square->southSquare;
+        while(temp !=nullptr){
+            if (!isEdge(temp) && (isVisited[temp->i][temp->j] == 0)){// intersection
+                checkpoint[3] = temp;
+            }else if (!isEdge(temp)) // n'importe lequel
+                checkpoint[2] = temp;
+            gladiator->log("exploring south %d %d", temp->i, temp->j);
+            target[3] = temp;
+            temp = temp->southSquare;
+        }
+     
+    }
+
+    gladiator->log("found a target i will tests visits");
+    for (size_t t = 0; t < 4; t++) {
+        if ((target[t] != nullptr) && !cmp_s(target[t], last)){
+
+            if (isVisited[target[t]->i][target[t]->j] == 0){// pas visité
+                neighbors[t] = target[t];
+            } else if (isVisited[target[t]->i][target[t]->j] == 2) // c'est une feuille visité ou une arrete 
+                {
+                    neighbors[t] = checkpoint[t];
+                }
+            else // visited == 1
+            {
+                    neighbors[t] = checkpoint[t];
+            }
+        }else if ((target[t] != nullptr))
+        {
+            if (isVisited[target[t]->i][target[t]->j] == 0){// pas visité
+                neighbors[t] = target[t];
+            } else if (isVisited[target[t]->i][target[t]->j] == 2) // c'est une feuille visité ou une arrete 
+                {
+                    neighbors[t] = checkpoint[t];
+                }
+            else // visited == 1
+            {
+                    neighbors[t] = checkpoint[t];
+            }
+        }
+        
+        else {
+            neighbors[t] = nullptr;
+        }
+    }
+    
+    return;
+}
+
+int nb_far_neighors(const MazeSquare* neighbors[4]){
+    int count = 0;
+    for (size_t i = 0; i < 4; i++) {
+        if (neighbors[i] != nullptr){
+            count++;
+        }
+    }
+    return count;
+}
+
+bool isLeaf(const MazeSquare *square){
+    // returns true when the maze square is a leaf
+    int count = 0;
+    if (square->northSquare == nullptr){
+        count++;
+    }
+    if (square->southSquare == nullptr){
+        count++;
+    }
+    if (square->eastSquare == nullptr){
+        count++;
+    }
+    if (square->westSquare == nullptr){
+        count++;
+    }
+    if (count == 3){
+        return true;
+    }
+    return false;
+}
+
+int get_nb_neighbors(const MazeSquare* s){
+    int count = 0;
+    if (s->eastSquare != nullptr)
+        count ++;
+    if (s->westSquare != nullptr)
+        count ++;
+    if (s->northSquare != nullptr)
+        count ++;    
+    if (s->southSquare != nullptr)
+        count ++;
+
+    return count ;
+}

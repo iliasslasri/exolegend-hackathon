@@ -1,11 +1,12 @@
 #ifndef DECOUVERTE_H
 #define DECOUVERTE_H
+#include <array>
 # include "gladiator.h"
 #include <cmath>
 #undef abs
 
 #define CELL_SIZE 3.0/14
-
+using Tableau = std::array<std::array<int, 12>, 12>;
 
 /************************* Vect2 class ***********************/
 class Vector2 {
@@ -53,4 +54,11 @@ bool hasWall(Gladiator* gladiator, const MazeSquare* nearestSquare, const float 
 
 // directions 
 void turn_north(Gladiator *gladiator, Position posRaw);
+void getNeighbors(Gladiator *gladiator,const MazeSquare* , const MazeSquare* neighbors[4]);
+void getNeighbors_bis(Gladiator *gladiator,const MazeSquare * square, const MazeSquare* neighbors[4],Tableau& array, const MazeSquare*);
+bool cmp_s(MazeSquare* s1, MazeSquare* s2);
+bool isLeaf(const MazeSquare* square);
+int get_nb_neighbors(const MazeSquare*);
+int nb_far_neighors(const MazeSquare*neighbors[4] );
+
 #endif // DECOUVERTE_H
