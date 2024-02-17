@@ -116,8 +116,19 @@ void loop() {
             gladiator->log("There is no goal, define a new goal");
             const MazeSquare* square = gladiator->maze->getNearestSquare();
             MazeSquare* target = nullptr;
+            const MazeSquare* temp;
+            int k = 1; // step how far we go in a direction
             if (square->northSquare != nullptr && !cmp_s(last, square->northSquare)) {
-                target = square->northSquare;
+                temp = gladiator->maze->getSquare(square->i, square->j+1);
+                k = 1;
+                while (temp->northSquare != nullptr)
+                { 
+                    target = temp->northSquare; 
+                    k+=1;
+                    temp = gladiator->maze->getSquare(square->i, square->j+k);
+                }
+                
+                //target = square->northSquare;
                 gladiator->log("Can go north ");
             }else if (square->eastSquare!= nullptr && !cmp_s(last, square->eastSquare)) {
                 target = square->eastSquare;
