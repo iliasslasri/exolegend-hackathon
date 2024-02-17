@@ -1,7 +1,7 @@
 #include "gladiator.h"
 Gladiator* gladiator;
 
-float kw =1;//2.f;
+float kw =2;//2.f;
 float kv = 1.2f;
 float wlimit = 3.f;
 float vlimit = 0.6;
@@ -38,7 +38,7 @@ bool turn(Position cons, Position pos) {
     gladiator->log("turn dx=%f dy=%f rho=%f d=%f cx=%f cy=%f x=%f y=%f", dx, dy, rho, reductionAngle(rho - pos.a), cons.x, cons.y, pos.x, pos.y);
     if (abs(reductionAngle(rho - pos.a)) > 0.1) {
         float consw = kw * reductionAngle(rho - pos.a);
-        consw = consw > wlimit ? (consw > 0 ? 1 : -1) * wlimit : consw;
+        //consw = consw > wlimit ? (consw > 0 ? 1 : -1) * wlimit : consw;
 
         float consvl = -gladiator->robot->getRobotRadius() * consw; // GFA 3.6.2
         float consvr = gladiator->robot->getRobotRadius() * consw; // GFA 3.6.2
@@ -63,8 +63,8 @@ bool go_to(Position cons, Position pos)
         double consw = kw * reductionAngle(rho - pos.a);
 
         double consv = kv * d * cos(reductionAngle(rho - pos.a));
-        consw = abs(consw) > wlimit ? (consw > 0 ? 1 : -1) * wlimit : consw;
-        consv = abs(consv) > vlimit ? (consv > 0 ? 1 : -1) * vlimit : consv;
+        //consw = abs(consw) > wlimit ? (consw > 0 ? 1 : -1) * wlimit : consw;
+        //consv = abs(consv) > vlimit ? (consv > 0 ? 1 : -1) * vlimit : consv;
 
         consvl = consv - gladiator->robot->getRobotRadius() * consw; // GFA 3.6.2
         consvr = consv + gladiator->robot->getRobotRadius() * consw; // GFA 3.6.2
@@ -157,7 +157,7 @@ void loop() {
                 }
             }else {
                 reached_target = go_to(goal, myPosition);
-                delay(10);
+                //delay(10);
                 timer+=10;
             }
 
@@ -166,7 +166,7 @@ void loop() {
                 has_goal = false;
                 turned = false;
                 gladiator->log("Target reached ! ");
-                delay(10);
+                //delay(10);
                 timer+=10;
             } 
         }
