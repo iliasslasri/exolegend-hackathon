@@ -1,4 +1,6 @@
+#include <stack>
 #include "gladiator.h"
+#include "pile.cpp"
 Gladiator* gladiator;
 
 float kw =2;//2.f;
@@ -16,6 +18,8 @@ Position goal {0, 0, 0};
 int i = 0;
 unsigned long last_time = 0;
 bool reached_target = false;
+Stack stack;
+
 
 double reductionAngle(double x)
 {
@@ -84,6 +88,35 @@ bool go_to(Position cons, Position pos)
     return arrived;
 }
 
+
+bool isCoin(MazeSquare* square){
+    // returns true when the maze square is a corner
+    if (square->northSquare == nullptr && square->westSquare == nullptr){
+        return true;
+    }else if (square->northSquare == nullptr && square->eastSquare == nullptr){
+        return true;
+    }else if (square->southSquare == nullptr && square->westSquare == nullptr){
+        return true;
+    }else if (square->southSquare == nullptr && square->eastSquare == nullptr){
+        return true;
+    }else 
+        return false;
+}
+
+bool isEdge(MazeSquare* square){
+    // returns true when the maze square is an edge
+    if (square->northSquare == nullptr && square->southSquare == nullptr ){
+        return true;
+    }else if (square->eastSquare == nullptr && square->westSquare == nullptr){
+        return true;
+    }else 
+        return false;
+    
+}
+
+
+
+
 void reset() {
     //fonction de reset:
     //initialisation de toutes vos variables avant le début d'un match
@@ -96,6 +129,8 @@ void reset() {
     consr = 0.f;
     last_time = 0;
     reached_target = false;
+    stack = Stack();
+    stack.push(*gladiator->maze->getNearestSquare());
 }
 
 void setup() {
@@ -119,6 +154,7 @@ void loop() {
         }
         //get 
         if(!has_goal) {
+            
             MazeSquare* target = nullptr;
             gladiator->log("There is no goal, define a new goal");
             const MazeSquare* square = gladiator->maze->getNearestSquare();

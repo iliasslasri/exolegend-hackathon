@@ -180,3 +180,5 @@ void turn_north(Gladiator *gladiator, Position posRaw){
 }
 
 void getNeighbors(Gladiator *Gladiator){}
+
+
