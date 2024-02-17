@@ -14,7 +14,8 @@ MazeSquare* last = nullptr;
 Position goal {0, 0, 0};
 //int grid[14*14];
 int i = 0;
-
+unsigned long last_time = 0;
+bool reached_target = false;
 
 double reductionAngle(double x)
 {
@@ -93,6 +94,8 @@ void reset() {
     last = nullptr;
     consl = 0.f;
     consr = 0.f;
+    last_time = 0;
+    reached_target = false;
 }
 
 void setup() {
@@ -109,19 +112,18 @@ void loop() {
         //code de votre stratégie
         Position myPosition = gladiator->robot->getData().position;
         
-        if (timer % 20000 > 18000){
-            timer = 0;
-            gladiator->log("Time is up, go to center");
+        if ( millis()-last_time >= 18000 ){
+            last_time = millis();
+            gladiator->log("Time is up, go to the center");
+            reached_target = go_to(goal, {1.5, 1.5});
         }
-
-
         //get 
         if(!has_goal) {
             MazeSquare* target = nullptr;
             gladiator->log("There is no goal, define a new goal");
             const MazeSquare* square = gladiator->maze->getNearestSquare();
             MazeSquare* temp = nullptr;
-            if(square->northSquare != nullptr){
+            if(square->northSquare != nullptr && !cmp_s(temp, last)){
                 temp = square->northSquare;
                 while(temp !=nullptr && !cmp_s(temp,last)){
                     last = target;
@@ -129,23 +131,54 @@ void loop() {
                     temp = temp->northSquare;
                     gladiator->log("Can go north ");
                 }
-            }else if(square->eastSquare != nullptr){
+                gladiator->log("last is %d %d", last->i, last->j);
+                gladiator->log("target is %d %d", target->i, target->j);
+            }else if(square->eastSquare != nullptr&& !cmp_s(temp, last)){
                 temp = square->eastSquare;
                 while(temp !=nullptr && !cmp_s(temp,last)){
                     last = target;
                     target = temp;
                     temp = temp->eastSquare;
                 }
+            }else if(square->southSquare != nullptr && !cmp_s(temp, last)){
+                temp = square->southSquare;
+                while(temp !=nullptr && !cmp_s(temp, last)){
+                    last = target;
+                    target = temp;
+                    temp = temp->southSquare;
+                }
+            }else if(square->westSquare != nullptr && !cmp_s(temp, last)){
+                temp = square->westSquare;
+                while(temp !=nullptr && !cmp_s(temp, last)){
+                    last = target;
+                    target = temp;
+                    temp = temp->westSquare;
+                }
+            }else if(square->northSquare != nullptr ){//&& (square->eastSquare !=nullptr || square->westSquare!=nullptr)){
+                temp = square->northSquare;
+                while(temp !=nullptr){
+                    last = target;
+                    target = temp;
+                    temp = temp->northSquare;
+                    gladiator->log("Can go north ");
+                }
+            }else if(square->eastSquare != nullptr){
+                temp = square->eastSquare;
+                while(temp !=nullptr){
+                    last = target;
+                    target = temp;
+                    temp = temp->eastSquare;
+                }
             }else if(square->southSquare != nullptr){
                 temp = square->southSquare;
-                while(temp !=nullptr && !cmp_s(temp,last)){
+                while(temp !=nullptr){
                     last = target;
                     target = temp;
                     temp = temp->southSquare;
                 }
             }else if(square->westSquare != nullptr){
                 temp = square->westSquare;
-                while(temp !=nullptr && !cmp_s(temp,last)){
+                while(temp !=nullptr){
                     last = target;
                     target = temp;
                     temp = temp->westSquare;
@@ -167,7 +200,7 @@ void loop() {
                 has_goal = true;
             }
         } else {
-            bool reached_target = false;
+            reached_target = false;
             if (!turned) {
                 bool finish_turning = turn(goal, myPosition);
                 if (finish_turning) {
