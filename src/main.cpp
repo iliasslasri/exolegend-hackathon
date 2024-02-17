@@ -6,12 +6,13 @@ float kv = 1.2f;
 float wlimit = 3.f;
 float vlimit = 0.6;
 float erreurPos = 0.05;
-
+float consl = 0.f;
+float consr = 0.f;
 bool has_goal = false;
 bool turned = false;
 MazeSquare* last = nullptr;
 Position goal {0, 0, 0};
-uint8_t targets[4][2] = {{1,6}, {2,6}, {3,5}, {4,5}};
+//int grid[14*14];
 int i = 0;
 
 
@@ -88,7 +89,10 @@ void reset() {
     gladiator->log("Call of reset function"); // GFA 4.5.1
     i = 0;
     has_goal = false;
-    turned =false;
+    turned = false;
+    last = nullptr;
+    consl = 0.f;
+    consr = 0.f;
 }
 
 void setup() {
@@ -113,38 +117,41 @@ void loop() {
 
         //get 
         if(!has_goal) {
+            MazeSquare* target = nullptr;
             gladiator->log("There is no goal, define a new goal");
             const MazeSquare* square = gladiator->maze->getNearestSquare();
-            MazeSquare* target = nullptr;
-            const MazeSquare* temp;
-            int k = 1; // step how far we go in a direction
-            if (square->northSquare != nullptr && !cmp_s(last, square->northSquare)) {
-                temp = gladiator->maze->getSquare(square->i, square->j+1);
-                k = 1;
-                while (temp->northSquare != nullptr)
-                { 
-                    target = temp->northSquare; 
-                    k+=1;
-                    temp = gladiator->maze->getSquare(square->i, square->j+k);
+            MazeSquare* temp = nullptr;
+            if(square->northSquare != nullptr){
+                temp = square->northSquare;
+                while(temp !=nullptr && !cmp_s(temp,last)){
+                    last = target;
+                    target = temp;
+                    temp = temp->northSquare;
+                    gladiator->log("Can go north ");
                 }
-                
-                //target = square->northSquare;
-                gladiator->log("Can go north ");
-            }else if (square->eastSquare!= nullptr && !cmp_s(last, square->eastSquare)) {
-                target = square->eastSquare;
-                gladiator->log("Can go east ");
-            }else if (square->southSquare != nullptr && !cmp_s(last, square->southSquare)) {
-                target = square->southSquare;
-                gladiator->log("Can go south ");
-            }else if (square->westSquare != nullptr && !cmp_s(last, square->westSquare)) {
-                target = square->westSquare;
-                gladiator->log("Can go west ");
+            }else if(square->eastSquare != nullptr){
+                temp = square->eastSquare;
+                while(temp !=nullptr && !cmp_s(temp,last)){
+                    last = target;
+                    target = temp;
+                    temp = temp->eastSquare;
+                }
+            }else if(square->southSquare != nullptr){
+                temp = square->southSquare;
+                while(temp !=nullptr && !cmp_s(temp,last)){
+                    last = target;
+                    target = temp;
+                    temp = temp->southSquare;
+                }
+            }else if(square->westSquare != nullptr){
+                temp = square->westSquare;
+                while(temp !=nullptr && !cmp_s(temp,last)){
+                    last = target;
+                    target = temp;
+                    temp = temp->westSquare;
+                }
             }
-
-
-            //target = (MazeSquare*) gladiator->maze->getSquare(targets[i][0], targets[i][1]);
-            //i=(i+1)%4;
-            if (target==nullptr) {
+            if (target == nullptr) {
                 gladiator->log("Go nowhere, go back ! ");
                 target = last;
             }
@@ -166,10 +173,10 @@ void loop() {
                 if (finish_turning) {
                     turned = true;
                 }
+                delay(10); // TODO : à supprimer
             }else {
                 reached_target = go_to(goal, myPosition);
-                //delay(10);
-                timer+=10;
+                delay(100); // TODO : supprime
             }
 
             if (reached_target)
@@ -177,11 +184,9 @@ void loop() {
                 has_goal = false;
                 turned = false;
                 gladiator->log("Target reached ! ");
-                //delay(10);
-                timer+=10;
+                delay(100);
             } 
         }
-            
 
     }
     delay(10);// was 10
