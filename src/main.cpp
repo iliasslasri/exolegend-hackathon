@@ -2,11 +2,11 @@
 #include "decouverte.h"
 Gladiator* gladiator;
 
-float kw = 0.5;
-float kv = 1.f;
+float kw = 1;
+float kv = 1.2f;
 float wlimit = 3.f;
 float vlimit = 0.6;
-float erreurPos = 0.07;
+float erreurPos = 0.05;
 
 double reductionAngle(double x)
 {
@@ -48,6 +48,7 @@ void reset() {
     //fonction de reset:
     //initialisation de toutes vos variables avant le début d'un match
     gladiator->log("Call of reset function"); // GFA 4.5.1
+    // Reset last square
 }
 
 void setup() {
@@ -56,24 +57,21 @@ void setup() {
     //enregistrement de la fonction de reset qui s'éxecute à chaque fois avant qu'une partie commence
     gladiator->game->onReset(&reset); // GFA 4.4.1
 }
-float xx = 0;
-float yy = 0;
+
+Position nextPosition{0.0, 0.0, 0.0};
+extern std::vector<std::vector<bool>> grille;
 void loop() {
     if(gladiator->game->isStarted()) { //tester si un match à déjà commencer
         //code de votre stratégie
         Position myPosition = gladiator->robot->getData().position;
-        Vector2 vect{};
-        getAccessibleNeighbor(gladiator, myPosition, vect);
-        
-        Position goal {vect.x(), vect.y(), 0};
-        
-        go_to(goal, myPosition);
-
-        if (!(xx == goal.x && yy == goal.y)){
-            gladiator->log("goal is %f  %f  %f", goal.x,goal.y, goal.a );
-            xx = goal.x;
-            yy = goal.y;
-        }
+        nextPosition = getAccessibleNeighbor(gladiator, myPosition);
+        gladiator->log("next position is %f  %f  %f", nextPosition.x, nextPosition.y, nextPosition.a);    
+        go_to(nextPosition, myPosition);
+        // if (!(xx == goal.x && yy == goal.y)){
+        //     gladiator->log("goal is %f  %f  %f", goal.x,goal.y, goal.a );
+        //     xx = goal.x;
+        //     yy = goal.y;
+        // }
     
     }
     delay(100);

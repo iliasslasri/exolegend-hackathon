@@ -7,7 +7,8 @@ enum Direction {
     WEST,
     SOUTH
 };
-bool grille[MAZE_SIZE][MAZE_SIZE]{false};
+
+
 void randomwalk(Gladiator *gladiator) {
     // we will implement a random walk
     
@@ -96,6 +97,13 @@ Position getAccessibleNeighbor(Gladiator *gladiator, Position posRaw) {
         
         // adding the new position to the table using getIJfromXY
         getIJfromXY(posRaw.x + (float)(CELL_SIZE+0.5*CELL_SIZE), posRaw.y, ret);
+        // print all the table
+        for (int i = 0; i < 14; ++i) {
+        for (int j = 0; j < 14; ++j) {
+            gladiator->log("%s", (grille[i][j] ? "true" : "false"));
+        }
+        std::cout << "\n";
+    }
         if(( grille[ret[0]][ret[1]] == false)){
             grille[ret[0]][ret[1]] = true;
             return Position {posRaw.x + (float)(CELL_SIZE+0.5*CELL_SIZE), posRaw.y, 0};
@@ -103,6 +111,8 @@ Position getAccessibleNeighbor(Gladiator *gladiator, Position posRaw) {
     } else if (square->northSquare != NULL) {
         
         getIJfromXY(posRaw.x, posRaw.y+ (float)(CELL_SIZE+0.5*CELL_SIZE), ret);
+        // print the ret values
+        gladiator->log("ret[0] %d ret[1] %d", ret[0], ret[1]);
         if(( grille[ret[0]][ret[1]] == false)){
             grille[ret[0]][ret[1]] = true;
             return Position {posRaw.x, posRaw.y + (float)(CELL_SIZE+0.5*CELL_SIZE), (float)M_PI/2};

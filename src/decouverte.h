@@ -3,12 +3,13 @@
 # include "gladiator.h"
 #include <cmath>
 #undef abs
+#include <vector>
 
 #define CELL_SIZE 3.0/14
 
 // Tableau de booleans 14x14
-#define MAZE_SIZE 14
-extern bool grille[MAZE_SIZE][MAZE_SIZE];
+extern std::vector<std::vector<bool>> grille;
+
 /************************* Vect2 class ***********************/
 class Vector2 {
 public:
