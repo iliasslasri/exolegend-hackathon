@@ -242,7 +242,7 @@ void loop()
         for (int i : robotList.ids)
         {
             data = gladiator->game->getOtherRobotData(i);
-            if (data.id != myid)
+            if (data.id != myid  && data.lifes != 0)
             {
                 gladiator->log("data id is %d", data.id);
                 // int ret[2];
@@ -254,14 +254,16 @@ void loop()
         }
         /// Position of the ennemy
         Position ennemyposition = data.position;
-        // log the two positions :
+        // log the two positions
         gladiator->log("myPosition: %f, %f", myPosition.x, myPosition.y);
         gladiator->log("ennemy position: %f, %f", ennemyposition.x, ennemyposition.y);
         // distance between the ennemy and me
         float distance = (Vector2{ennemyposition.x, ennemyposition.y} - Vector2{myPosition.x, myPosition.y}).norm2();
         // if the distance is less than 1.5 meters
-
-        if (gladiator->weapon->canLaunchRocket() && distance < 1.5)
+        if (distance < CELL_SIZE)
+        {
+            currentState = RobotState::SPIN_MODE;
+        } else if (gladiator->weapon->canLaunchRocket() && distance < 1.5)
         {
             currentState = RobotState::MISSILE;
         }
@@ -270,6 +272,9 @@ void loop()
         {
         case RobotState::SPIN_MODE:
             // Execute actions for SPIN MODE state
+            gladiator->log("Spin mode");
+            gladiator->control->setWheelSpeed(WheelAxis::RIGHT, 3, false); // GFA 3.2.1
+            gladiator->control->setWheelSpeed(WheelAxis::LEFT, -3, false);  // GFA 3.2.1
             break;
         case RobotState::RECHERCHE:
         {
