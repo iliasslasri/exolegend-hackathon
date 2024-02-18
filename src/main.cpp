@@ -205,32 +205,19 @@ void updateState()
 {
     // Implement logic to update the state based on conditions
     // For example, transition to MISSILE state after a certain time
-    if (millis() - last_time >= 5000 && currentState != RobotState::GOCENTER)
-    {
-        // TODO : si encloisonnée go to center
-        currentState = RobotState::GOCENTER;
-        last_time = millis();
-    }
-    else
-    {
-        currentState = RobotState::RECHERCHE;
-    }
 
-    if (enemy_in_range(gladiator, gladiator->robot->getData().position, gladiator->robot->getData().position))
-    {
-        currentState = RobotState::MISSILE;
-    }
-    else
-    {
-        currentState = RobotState::RECHERCHE;
-    }
+    currentState = RobotState::RECHERCHE;
 
-    if (enemy_nearby(gladiator, gladiator->robot->getData().position, gladiator->robot->getData().position))
-    {
-        currentState = RobotState::SPIN_MODE;
-    }
-    else
-        currentState = RobotState::RECHERCHE;
+    // if (millis() - last_time >= 5000 && currentState != RobotState::GOCENTER)
+    // {
+    //     // TODO : si encloisonnée go to center
+    //     currentState = RobotState::GOCENTER;
+    //     last_time = millis();
+    // }
+    // else
+    // {
+    //     currentState = RobotState::RECHERCHE;
+    // }
 }
 
 void loop()
@@ -240,11 +227,44 @@ void loop()
         // code de votre stratégie
 
         updateState();
+
         const MazeSquare *cur = gladiator->maze->getNearestSquare();
         Position myPosition = gladiator->robot->getData().position;
         const MazeSquare *target = nullptr;
         const MazeSquare *square = gladiator->maze->getNearestSquare();
         RobotData data;
+
+        RobotList robotList = gladiator->game->getPlayingRobotsId();
+        uint8_t myid = gladiator->robot->getData().id;
+        // //IL y'a 4 robots sur le terrain, on réccupère l'id du troisième robot (par exemple)
+        // unsigned char id = robotList.ids[2];
+        // id de l'ennemie
+        for (int i : robotList.ids)
+        {
+            data = gladiator->game->getOtherRobotData(i);
+            if (data.id != myid)
+            {
+                gladiator->log("data id is %d", data.id);
+                // int ret[2];
+                // getIJfromXY(data.cposition.x, data.cposition.y, ret);
+                // float square_size = gladiator->maze->getSquareSize();
+                // const MazeSquare* ennemySquare =  gladiator->maze->getSquare(ret[0], ret[1]);
+                break;
+            }
+        }
+        /// Position of the ennemy
+        Position ennemyposition = data.position;
+        // log the two positions :
+        gladiator->log("myPosition: %f, %f", myPosition.x, myPosition.y);
+        gladiator->log("ennemy position: %f, %f", ennemyposition.x, ennemyposition.y);
+        // distance between the ennemy and me
+        float distance = (Vector2{ennemyposition.x, ennemyposition.y} - Vector2{myPosition.x, myPosition.y}).norm2();
+        // if the distance is less than 1.5 meters
+
+        if (gladiator->weapon->canLaunchRocket() && distance < 1.5)
+        {
+            currentState = RobotState::MISSILE;
+        }
 
         switch (currentState)
         {
@@ -367,46 +387,17 @@ void loop()
                     delay(100);
                 }
             }
-
             break;
         }
         case RobotState::MISSILE:
         {
             // Execute actions for MISSILE state
-            RobotList robotList = gladiator->game->getPlayingRobotsId();
-            uint8_t myid = gladiator->robot->getData().id;
-            // //IL y'a 4 robots sur le terrain, on réccupère l'id du troisième robot (par exemple)
-            // unsigned char id = robotList.ids[2];
-            // id de l'ennemie
-            for (int i : robotList.ids)
-            {
-                data = gladiator->game->getOtherRobotData(i);
-                if (data.id != myid)
-                {
-                    gladiator->log("data id is %d", data.id);
-                    // int ret[2];
-                    // getIJfromXY(data.cposition.x, data.cposition.y, ret);
-                    // float square_size = gladiator->maze->getSquareSize();
-                    // const MazeSquare* ennemySquare =  gladiator->maze->getSquare(ret[0], ret[1]);
-                    break;
-                }
-            }
-            /// Position of the ennemy
-            Position ennemyposition = data.position;
-            // log the two positions :
-            gladiator->log("myPosition: %f, %f", myPosition.x, myPosition.y);
-            gladiator->log("ennemy position: %f, %f", ennemyposition.x, ennemyposition.y);
-            // distance between the ennemy and me
-            float distance = (Vector2{ennemyposition.x, ennemyposition.y} - Vector2{myPosition.x, myPosition.y}).norm2();
-            // if the distance is less than 1.5 meters
-            if (gladiator->weapon->canLaunchRocket() && distance < 1.5)
-            {
-                gladiator->log("There is a coin in the square");
-                gladiator->log("Coin value is %d", square->coin.value);
-                gladiator->log("Coin position is x=%f; y=%f", square->coin.p.x, square->coin.p.y);
-                Launchifitcan(gladiator, ennemyposition, myPosition);
-                gladiator->log("====================================>");
-            }
+            gladiator->log("There is a coin in the square");
+            gladiator->log("Coin value is %d", square->coin.value);
+            gladiator->log("Coin position is x=%f; y=%f", square->coin.p.x, square->coin.p.y);
+            Launchifitcan(gladiator, ennemyposition, myPosition);
+            gladiator->log("====================================>");
+            currentState = RobotState::RECHERCHE;
             break;
         }
         case RobotState::GOCENTER:
