@@ -103,7 +103,22 @@ const MazeSquare* depiler() {
     }
     return s;
 }
-
+/// Get the square of the ennemy and fire missile if the ennemy is in the range
+void Launchifitcan(Gladiator* gladiator,Position ennemyposition, Position myPosition){
+        // turn the robot to the ennemy 
+        bool turned = false;
+        while(!turned) {
+            bool finish_turning = turn(ennemyposition, myPosition);
+            myPosition = gladiator->robot->getData().position;
+            if (finish_turning) {
+                turned = true;
+            }
+            delay(20);
+        }
+    // attack the ennemy
+    gladiator->weapon->launchRocket();
+    return;
+}
 
 
 void reset() {
@@ -203,8 +218,41 @@ void loop() {
         //     float square_size = gladiator->maze->getSquareSize();
         //     target = gladiator->maze->getSquare(flee.first, flee.second);
         // }
-        
-        if(!has_goal) {
+        const MazeSquare* square = gladiator->maze->getNearestSquare();
+        // test if it has a coin
+        RobotList robotList = gladiator->game->getPlayingRobotsId();
+        RobotData data;
+        uint8_t myid = gladiator->robot->getData().id;
+        // //IL y'a 4 robots sur le terrain, on réccupère l'id du troisième robot (par exemple)
+        // unsigned char id = robotList.ids[2];
+        // id de l'ennemie
+        for (int i : robotList.ids){
+            data = gladiator->game->getOtherRobotData(i);
+            if(data.id != myid){
+                gladiator->log("data id is %d", data.id);
+                // int ret[2];
+                // getIJfromXY(data.cposition.x, data.cposition.y, ret);
+                // float square_size = gladiator->maze->getSquareSize();
+                // const MazeSquare* ennemySquare =  gladiator->maze->getSquare(ret[0], ret[1]);
+                break;
+            }
+        }
+        /// Position of the ennemy
+        Position ennemyposition = data.position;
+        // log the two positions :
+        gladiator->log("myPosition: %f, %f", myPosition.x, myPosition.y );
+        gladiator->log("ennemy position: %f, %f",ennemyposition.x, ennemyposition.y);
+        // distance between the ennemy and me
+        float distance = (Vector2{ennemyposition.x, ennemyposition.y} - Vector2{myPosition.x, myPosition.y}).norm2();
+        // if the distance is less than 1.5 meters
+        if(gladiator->weapon->canLaunchRocket() && distance < 1.5){
+            gladiator->log("There is a coin in the square");
+            gladiator->log("Coin value is %d", square->coin.value);
+            gladiator->log("Coin position is x=%f; y=%f", square->coin.p.x, square->coin.p.y);
+            Launchifitcan(gladiator, ennemyposition, myPosition);
+            gladiator->log("=================================================================================================================================================================================================================================================================================================================================================================================================================================================================================");
+        }
+        else if(!has_goal) {
             gladiator->log("HAVE NO GOAL");
             //const MazeSquare * target = nullptr;
             target = nullptr;
