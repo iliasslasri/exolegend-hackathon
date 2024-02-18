@@ -19,6 +19,7 @@ const int TAILLE_MAX = 40;
 const MazeSquare *pile[TAILLE_MAX]; // notre pile
 int sommet = -1;
 int i = 0;
+float square_size;
 unsigned long last_time = millis();
 bool reached_target = false;
 using Tableau = std::array<std::array<int, 12>, 12>;
@@ -29,7 +30,8 @@ enum class RobotState
     SPIN_MODE,
     RECHERCHE,
     MISSILE,
-    GOCENTER
+    GOCENTER,
+    GOTONORMAL
 };
 RobotState currentState = RobotState::RECHERCHE;
 double reductionAngle(double x)
@@ -160,6 +162,7 @@ void reset()
             isVisited[i][j] = 0;
         }
     }
+    square_size = gladiator->maze->getSquareSize();
 }
 
 void setup()
@@ -227,6 +230,14 @@ void loop()
         // code de votre stratégie
 
         updateState();
+        /////// ----- FOR GOTONORMAL STATE
+        // Test if we are in wall :
+        if (gladiator->robot->getData().speedLimit < 1 ){
+            gladiator->log("I am in wall");
+            currentState = RobotState::GOTONORMAL;
+        }
+
+
 
         const MazeSquare *cur = gladiator->maze->getNearestSquare();
         Position myPosition = gladiator->robot->getData().position;
@@ -247,7 +258,6 @@ void loop()
                 gladiator->log("data id is %d", data.id);
                 // int ret[2];
                 // getIJfromXY(data.cposition.x, data.cposition.y, ret);
-                // float square_size = gladiator->maze->getSquareSize();
                 // const MazeSquare* ennemySquare =  gladiator->maze->getSquare(ret[0], ret[1]);
                 break;
             }
@@ -270,6 +280,36 @@ void loop()
 
         switch (currentState)
         {
+            case RobotState::GOTONORMAL:{
+                std::pair<int, int> new_coords;
+                int cur_i = gladiator->maze->getNearestSquare()->i;
+                int cur_j = gladiator->maze->getNearestSquare()->j;
+                // Search for a new target
+                const MazeSquare* target = nullptr;
+                target = gladiator->maze->getSquare(cur_i, cur_j);
+                if(target == nullptr){
+                    new_coords = {cur_i - 1, cur_j};
+                    target = gladiator->maze->getSquare(new_coords.first, new_coords.second);
+                    if(target == nullptr){
+                        new_coords = {cur_i, cur_j - 1};
+                        target = gladiator->maze->getSquare(new_coords.first, new_coords.second);
+                        if(target == nullptr){
+                            new_coords = {cur_i + 1, cur_j};
+                            target = gladiator->maze->getSquare(new_coords.first, new_coords.second);
+                            if(target == nullptr){
+                                new_coords = {cur_i, cur_j + 1};
+                                target = gladiator->maze->getSquare(new_coords.first, new_coords.second);
+                            }
+                        }
+                    }
+                }
+                goal = {(float)((target->i + 0.5)*square_size),(float)((target->j + 0.5) * square_size), 0.0};
+                has_goal = true;
+                reached_target = false;
+                turned = false;
+                currentState = RobotState::RECHERCHE;
+                delete target;
+            }
         case RobotState::SPIN_MODE:
             // Execute actions for SPIN MODE state
             gladiator->log("Spin mode");
@@ -308,17 +348,6 @@ void loop()
                     // empiler(square = gladiator->maze->getNearestSquare());
                     gladiator->log("coordiantes of square: %d %d ", square->i, square->j);
                     getNeighbors_bis(gladiator, square, neighbors, isVisited, last);
-                    // log all the coordinates of the neighbors
-                    gladiator->log("number  of neighbors %d", nb_far_neighors(neighbors));
-                    gladiator->log("Printing");
-                    for (size_t p = 0; p < 4; p++)
-                    {
-                        if (neighbors[p] != nullptr)
-                        {
-                            gladiator->log("neighbor %ld \t i :  %d  j:    %d ", p, neighbors[p]->i, neighbors[p]->j);
-                        }
-                    }
-                    gladiator->log("Printing after");
 
                     // push to the neighbors to the dfs stack
                     // faire le dfs ou on prends une branche quand on decide de prednre une direction
@@ -356,7 +385,6 @@ void loop()
                     }
                     last = square;
                     gladiator->log("coordiantes of depile (target) : %d %d ", target->i, target->j);
-                    float square_size = gladiator->maze->getSquareSize();
                     last = square;
                     goal.x = (target->i + 0.5) * square_size;
                     goal.y = (target->j + 0.5) * square_size;
