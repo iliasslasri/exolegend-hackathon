@@ -27,11 +27,12 @@ Tableau isVisited{0};
 
 enum class RobotState
 {
-    SPIN_MODE,
+    
     RECHERCHE,
     MISSILE,
     GOCENTER,
-    GOTONORMAL
+    GOTONORMAL,
+    SPIN_MODE
 };
 RobotState currentState = RobotState::RECHERCHE;
 double reductionAngle(double x)
@@ -172,6 +173,8 @@ void setup()
     gladiator = new Gladiator();
     // enregistrement de la fonction de reset qui s'éxecute à chaque fois avant qu'une partie commence
     gladiator->game->onReset(&reset); // GFA 4.4.1
+    gladiator->control->setWheelPidCoefs(WheelAxis::RIGHT, 0.5, 5, 1);
+    gladiator->control->setWheelPidCoefs(WheelAxis::LEFT, 0.5, 5, 1);
 }
 
 std::pair<int, int> flee_wall(int cur_i, int cur_j)
@@ -227,21 +230,23 @@ void updateState()
 void loop()
 {
     if (gladiator->game->isStarted())
-    { // tester si un match à déjà commencer
+    {
+        
+        // tester si un match à déjà commencer
         // code de votre stratégie
-
-        updateState();
+        const MazeSquare *cur = gladiator->maze->getNearestSquare();
+        Position myPosition = gladiator->robot->getData().position;
+        float distance = (Vector2{1.5, 1.5} - Vector2{myPosition.x, myPosition.y}).norm2();
         /////// ----- FOR GOTONORMAL STATE
         // Test if we are in wall :
-        if (gladiator->robot->getData().speedLimit < 1 ){
+        // position of the robot in the maze
+        
+        if (currentState == RobotState::RECHERCHE && (gladiator->robot->getData().speedLimit < 1 || distance > gladiator->maze->getSize()/2)){
             gladiator->log("I am in wall");
             currentState = RobotState::GOTONORMAL;
         }
 
-
-
-        const MazeSquare *cur = gladiator->maze->getNearestSquare();
-        Position myPosition = gladiator->robot->getData().position;
+        
         const MazeSquare *target = nullptr;
         const MazeSquare *square = gladiator->maze->getNearestSquare();
         RobotData data;
@@ -269,12 +274,14 @@ void loop()
         gladiator->log("myPosition: %f, %f", myPosition.x, myPosition.y);
         gladiator->log("ennemy position: %f, %f", ennemyposition.x, ennemyposition.y);
         // distance between the ennemy and me
-        float distance = (Vector2{ennemyposition.x, ennemyposition.y} - Vector2{myPosition.x, myPosition.y}).norm2();
+        distance = (Vector2{ennemyposition.x, ennemyposition.y} - Vector2{myPosition.x, myPosition.y}).norm2();
         // if the distance is less than 1.5 meters
-        if (distance < CELL_SIZE && ennemyposition.x !=0 && ennemyposition.y != 0)
+        if (currentState == RobotState::RECHERCHE && distance <= CELL_SIZE)
         {
+            gladiator->log("I am near the ennemy");
             currentState = RobotState::SPIN_MODE;
-        } else if (gladiator->weapon->canLaunchRocket() && distance < 1.5)
+        }
+        else if (currentState == RobotState::RECHERCHE && gladiator->weapon->canLaunchRocket() && distance < 1.5)
         {
             currentState = RobotState::MISSILE;
         }
@@ -282,33 +289,35 @@ void loop()
         switch (currentState)
         {
             case RobotState::GOTONORMAL:{
-                std::pair<int, int> new_coords;
-                int cur_i = gladiator->maze->getNearestSquare()->i;
-                int cur_j = gladiator->maze->getNearestSquare()->j;
-                // Search for a new target
-                const MazeSquare* target = nullptr;
-                target = gladiator->maze->getSquare(cur_i, cur_j);
-                if(target == nullptr){
-                    new_coords = {cur_i - 1, cur_j};
-                    target = gladiator->maze->getSquare(new_coords.first, new_coords.second);
-                    if(target == nullptr){
-                        new_coords = {cur_i, cur_j - 1};
-                        target = gladiator->maze->getSquare(new_coords.first, new_coords.second);
-                        if(target == nullptr){
-                            new_coords = {cur_i + 1, cur_j};
-                            target = gladiator->maze->getSquare(new_coords.first, new_coords.second);
-                            if(target == nullptr){
-                                new_coords = {cur_i, cur_j + 1};
-                                target = gladiator->maze->getSquare(new_coords.first, new_coords.second);
-                            }
-                        }
-                    }
-                }
-                goal = {(float)((target->i + 0.5)*square_size),(float)((target->j + 0.5) * square_size), 0.0};
+                // std::pair<int, int> new_coords;
+                // int cur_i = gladiator->maze->getNearestSquare()->i;
+                // int cur_j = gladiator->maze->getNearestSquare()->j;
+                // // Search for a new target
+                // const MazeSquare* target = nullptr;
+                // target = gladiator->maze->getSquare(cur_i, cur_j);
+                // if(target == nullptr){
+                //     new_coords = {cur_i - 1, cur_j};
+                //     target = gladiator->maze->getSquare(new_coords.first, new_coords.second);
+                //     if(target == nullptr){
+                //         new_coords = {cur_i, cur_j - 1};
+                //         target = gladiator->maze->getSquare(new_coords.first, new_coords.second);
+                //         if(target == nullptr){
+                //             new_coords = {cur_i + 1, cur_j};
+                //             target = gladiator->maze->getSquare(new_coords.first, new_coords.second);
+                //             if(target == nullptr){
+                //                 new_coords = {cur_i, cur_j + 1};
+                //                 target = gladiator->maze->getSquare(new_coords.first, new_coords.second);
+                //             }
+                //         }
+                //     }
+                // }
+                //goal = {(float)((target->i + 0.5)*square_size),(float)((target->j + 0.5) * square_size), 0.0};
+                goal = { 1.5, 1.5, 0.0};
                 has_goal = true;
                 reached_target = false;
                 turned = false;
                 currentState = RobotState::RECHERCHE;
+                break;
 
             }
         case RobotState::SPIN_MODE:
@@ -316,6 +325,8 @@ void loop()
             gladiator->log("Spin mode");
             gladiator->control->setWheelSpeed(WheelAxis::RIGHT, 3, false); // GFA 3.2.1
             gladiator->control->setWheelSpeed(WheelAxis::LEFT, -3, false);  // GFA 3.2.1
+            delay(1000);
+            currentState = RobotState::RECHERCHE;
             break;
         case RobotState::RECHERCHE:
         {
