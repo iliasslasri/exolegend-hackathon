@@ -44,6 +44,7 @@ double reductionAngle(double x)
 
 bool turn(Position cons, Position pos)
 {
+    gladiator->log("turning to the goal");
     double dx = cons.x - pos.x;
     double dy = cons.y - pos.y;
     double rho = atan2(dy, dx);
@@ -270,7 +271,7 @@ void loop()
         // distance between the ennemy and me
         float distance = (Vector2{ennemyposition.x, ennemyposition.y} - Vector2{myPosition.x, myPosition.y}).norm2();
         // if the distance is less than 1.5 meters
-        if (distance < CELL_SIZE)
+        if (distance < CELL_SIZE && ennemyposition.x !=0 && ennemyposition.y != 0)
         {
             currentState = RobotState::SPIN_MODE;
         } else if (gladiator->weapon->canLaunchRocket() && distance < 1.5)
@@ -308,7 +309,7 @@ void loop()
                 reached_target = false;
                 turned = false;
                 currentState = RobotState::RECHERCHE;
-                delete target;
+
             }
         case RobotState::SPIN_MODE:
             // Execute actions for SPIN MODE state
