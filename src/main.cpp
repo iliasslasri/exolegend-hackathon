@@ -3,8 +3,8 @@
 #include "gladiator.h"
 #include "decouverte.h"
 
-Gladiator* gladiator;
 
+Gladiator* gladiator;
 float kw =2;//2.f;
 float kv = 1.2f;
 float wlimit = 3.f;

@@ -8,6 +8,7 @@
 #define CELL_SIZE 3.0/14
 using Tableau = std::array<std::array<int, 12>, 12>;
 
+
 /************************* Vect2 class ***********************/
 class Vector2 {
 public:
